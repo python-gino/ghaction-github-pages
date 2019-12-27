@@ -12,6 +12,8 @@ inputs:
   target_branch:
     description: 'Git branch where assets will be deployed'
     default: 'gh-pages'
+  target_path:
+    description: 'Path in the target repository to deploy'
   keep_history:
     description: 'Create incremental commit instead of doing push force'
     default: 'false'

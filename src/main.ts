@@ -1,7 +1,7 @@
 import * as child_process from 'child_process';
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
-import {copySync} from 'fs-extra';
+import {copySync, ensureDirSync} from 'fs-extra';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -10,6 +10,7 @@ async function run() {
   try {
     const repo: string = core.getInput('repo') || process.env['GITHUB_REPOSITORY'] || '';
     const target_branch: string = core.getInput('target_branch') || 'gh-pages';
+    const target_path: string = core.getInput('target_path') || '.';
     const keep_history: boolean = /true/i.test(core.getInput('keep_history'));
     const allow_empty_commit: boolean = /true/i.test(core.getInput('allow_empty_commit'));
     const build_dir: string = core.getInput('build_dir', {required: true});
@@ -51,8 +52,10 @@ async function run() {
       await exec.exec('git', ['checkout', '--orphan', target_branch]);
     }
 
-    core.info(`🏃 Copying ${path.join(currentdir, build_dir)} contents to ${tmpdir}`);
-    copySync(path.join(currentdir, build_dir), tmpdir);
+    let target = path.join(tmpdir, target_path.replace('refs/', '').replace('heads/', '').replace('tags/', ''));
+    core.info(`🏃 Copying ${path.join(currentdir, build_dir)} contents to ${target}`);
+    ensureDirSync(target)
+    copySync(path.join(currentdir, build_dir), target);
 
     if (fqdn) {
       core.info(`✍️ Writing ${fqdn} domain name to ${path.join(tmpdir, 'CNAME')}`);
@@ -78,7 +81,7 @@ async function run() {
       core.info(`✅ Allow empty commit`);
       gitCommitCmd.push('--allow-empty');
     }
-    gitCommitCmd.push('-m', commit_message);
+    gitCommitCmd.push('-m', commit_message.replace('refs/', '').replace('heads/', '').replace('tags/', ''));
     await exec.exec('git', gitCommitCmd);
 
     await exec.exec('git', ['show', '--stat-count=10', 'HEAD']);
