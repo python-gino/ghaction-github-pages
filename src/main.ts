@@ -73,6 +73,7 @@ async function run() {
       return;
     }
 
+    await exec.exec('git', ['status']);
     await exec.exec('git', ['add', '--all', '.']);
 
     let gitCommitCmd: Array<string> = [];
