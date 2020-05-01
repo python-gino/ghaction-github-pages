@@ -71,7 +71,11 @@ async function run() {
     // update versions.json
     let versions = {};
     fs.readdirSync(path.join(tmpdir, 'docs')).forEach(loc => {
-      versions[loc] = fs.readdirSync(path.join(tmpdir, 'docs', loc)).sort();
+      if (!loc.endsWith('html') && !loc.endsWith('json'))
+        versions[loc] = fs
+          .readdirSync(path.join(tmpdir, 'docs', loc))
+          .filter(x => !x.endsWith('html'))
+          .sort();
     });
     fs.writeFileSync(path.join(tmpdir, 'docs', 'versions.json'), JSON.stringify(versions));
 
