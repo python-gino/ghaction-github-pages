@@ -52,15 +52,28 @@ async function run() {
       await exec.exec('git', ['checkout', '--orphan', target_branch]);
     }
 
-    let target = path.join(tmpdir, target_path.replace('refs/', '').replace('heads/', '').replace('tags/', ''));
+    let target = path.join(
+      tmpdir,
+      ...target_path
+        .split('/')
+        .filter(x => !['refs', 'tags', 'heads'].includes(x))
+        .map(x => x.replace(/v(\d+)\.(\d+)\.(\d+)/, '$1.$2'))
+    );
     core.info(`🏃 Copying ${path.join(currentdir, build_dir)} contents to ${target}`);
-    ensureDirSync(target)
+    ensureDirSync(target);
     copySync(path.join(currentdir, build_dir), target);
 
     if (fqdn) {
       core.info(`✍️ Writing ${fqdn} domain name to ${path.join(tmpdir, 'CNAME')}`);
       fs.writeFileSync(path.join(tmpdir, 'CNAME'), fqdn.trim());
     }
+
+    // update versions.json
+    let versions = {};
+    fs.readdirSync(path.join(tmpdir, 'docs')).forEach(loc => {
+      versions[loc] = fs.readdirSync(path.join(tmpdir, 'docs', loc)).sort();
+    });
+    fs.writeFileSync(path.join(tmpdir, 'docs', 'versions.json'), JSON.stringify(versions));
 
     core.info(`🔨 Configuring git committer to be ${committer_name} <${committer_email}>`);
     await exec.exec('git', ['config', 'user.name', committer_name]);
@@ -82,7 +95,14 @@ async function run() {
       core.info(`✅ Allow empty commit`);
       gitCommitCmd.push('--allow-empty');
     }
-    gitCommitCmd.push('-m', commit_message.replace('refs/', '').replace('heads/', '').replace('tags/', ''));
+    gitCommitCmd.push(
+      '-m',
+      commit_message
+        .split('/')
+        .filter(x => !['refs', 'tags', 'heads'].includes(x))
+        .map(x => x.replace(/v(\d+)\.(\d+)\.(\d+)/, '$1.$2'))
+        .join('/')
+    );
     await exec.exec('git', gitCommitCmd);
 
     await exec.exec('git', ['show', '--stat-count=10', 'HEAD']);
