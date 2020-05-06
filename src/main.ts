@@ -57,7 +57,7 @@ async function run() {
       ...target_path
         .split('/')
         .filter(x => !['refs', 'tags', 'heads'].includes(x))
-        .map(x => x.replace(/v(\d+)\.(\d+)\.(\d+)/, '$1.$2'))
+        .map(x => x.replace(/v(\d+)\.(\d+)\.([\dx]+)/, '$1.$2'))
     );
     core.info(`🏃 Copying ${path.join(currentdir, build_dir)} contents to ${target}`);
     ensureDirSync(target);
@@ -104,7 +104,7 @@ async function run() {
       commit_message
         .split('/')
         .filter(x => !['refs', 'tags', 'heads'].includes(x))
-        .map(x => x.replace(/v(\d+)\.(\d+)\.(\d+)/, '$1.$2'))
+        .map(x => x.replace(/v(\d+)\.(\d+)\.([\dx]+)/, '$1.$2'))
         .join('/')
     );
     await exec.exec('git', gitCommitCmd);
